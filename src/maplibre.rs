@@ -16,5 +16,11 @@ extern "C" {
     pub fn addLayer(this: &Map, layer: &JsValue);
 
     #[wasm_bindgen(method)]
-    pub fn on(this: &Map, event: &str, callback: &js_sys::Function);
+    pub fn on(this: &Map, event: &str, layer: &str, callback: &js_sys::Function);
+
+    #[wasm_bindgen(method)]
+    pub fn setFeatureState(this: &Map, params: &JsValue, state: &JsValue);
+
+    #[wasm_bindgen(method, js_name = querySourceFeatures)]
+    pub fn query_source_features(this: &Map, source: &str) -> js_sys::Array;
 }

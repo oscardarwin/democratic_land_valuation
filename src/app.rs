@@ -1,5 +1,7 @@
 use crate::maplibre::Map;
+use anyhow::Result;
 use gloo_net::http::Request;
+use js_sys::JSON;
 use leptos::ev;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -37,10 +39,10 @@ pub fn App() -> impl IntoView {
 
 #[cfg(feature = "hydrate")]
 fn spawn_local_setup_map(_document: &Document) {
-    use crate::map_style::MapStyle;
+    use std::rc::Rc;
 
     spawn_local(async move {
-        let style = MapStyle::default();
+        let style = load_map_style("/map_style.json").await;
 
         let container = document()
             .get_element_by_id("map")
@@ -59,71 +61,116 @@ fn spawn_local_setup_map(_document: &Document) {
         js_sys::Reflect::set(
             &options,
             &JsValue::from_str("zoom"),
-            &JsValue::from_f64(12.0),
+            &JsValue::from_f64(14.0),
         )
         .unwrap();
-        js_sys::Reflect::set(
-            &options,
-            &JsValue::from_str("style"),
-            &to_value(&style).unwrap(),
-        )
-        .unwrap();
+        js_sys::Reflect::set(&options, &JsValue::from_str("style"), &style).unwrap();
 
         web_sys::console::log_1(&"Setting up map...".into());
-        let map = Map::new(&options.into());
-        web_sys::console::log_1(&to_value(&style).unwrap());
+        let map = Rc::new(Map::new(&options.into()));
 
-        // Fetch GeoJSON parcels for popups
-        let geojson: serde_json::Value = Request::get("/parcels_wgs84.geojson")
-            .send()
-            .await
-            .unwrap()
-            .json()
-            .await
-            .unwrap();
+        let mut selected_id: Option<String> = None;
+        let map_clone = map.clone();
 
-        // Add as a source for interactive popups
-        // map.addSource(
-        //     "parcels-popup",
-        //     &to_value(&serde_json::json!({
-        //         "type": "geojson",
-        //         "data": geojson
-        //     }))
-        //     .unwrap(),
-        // );
-
-        // map.addLayer(
-        //     &to_value(&serde_json::json!({
-        //         "id": "parcels-popup-layer",
-        //         "type": "fill",
-        //         "source": "parcels-popup",
-        //         "paint": { "fill-opacity": 0 }
-        //     }))
-        //     .unwrap(),
-        // );
-
-        // Add click handler
         let closure = Closure::wrap(Box::new(move |e: JsValue| {
             let features = js_sys::Reflect::get(&e, &JsValue::from_str("features")).unwrap();
-            let feature = js_sys::Array::from(&features).get(0);
-            let props = js_sys::Reflect::get(&feature, &JsValue::from_str("properties")).unwrap();
-            let id = js_sys::Reflect::get(&props, &JsValue::from_str("id"))
-                .unwrap_or(JsValue::from_str("Unknown"));
-            let popup = web_sys::window()
-                .unwrap()
-                .document()
-                .unwrap()
-                .create_element("div")
+            let features_array = js_sys::Array::from(&features);
+            if features_array.length() == 0 {
+                return;
+            }
+
+            let feature = features_array.get(0);
+
+            web_sys::console::log_1(&feature);
+
+            let feature_id = js_sys::Reflect::get(&feature, &JsValue::from_str("id"))
+                .ok()
+                .and_then(|v| v.as_string());
+
+            let Some(new_id) = feature_id else {
+                return;
+            };
+
+            if let Some(old_id) = selected_id.clone() {
+                let params = js_sys::Object::new();
+                js_sys::Reflect::set(
+                    &params,
+                    &JsValue::from_str("source"),
+                    &JsValue::from_str("parcels"),
+                )
                 .unwrap();
-            popup.set_inner_html(&format!(
-                "<b>Parcel ID:</b> {}",
-                id.as_string().unwrap_or_default()
-            ));
+                js_sys::Reflect::set(
+                    &params,
+                    &JsValue::from_str("sourceLayer"),
+                    &JsValue::from_str("parcels"),
+                )
+                .unwrap();
+                js_sys::Reflect::set(
+                    &params,
+                    &JsValue::from_str("id"),
+                    &JsValue::from_str(&old_id),
+                )
+                .unwrap();
+                let state = js_sys::Object::new();
+                js_sys::Reflect::set(
+                    &state,
+                    &JsValue::from_str("selected"),
+                    &JsValue::from_bool(false),
+                )
+                .unwrap();
+                map_clone.setFeatureState(&params.into(), &state.into());
+            }
+
+            let params = js_sys::Object::new();
+            js_sys::Reflect::set(
+                &params,
+                &JsValue::from_str("source"),
+                &JsValue::from_str("parcels"),
+            )
+            .unwrap();
+            js_sys::Reflect::set(
+                &params,
+                &JsValue::from_str("sourceLayer"),
+                &JsValue::from_str("parcels"),
+            )
+            .unwrap();
+            js_sys::Reflect::set(
+                &params,
+                &JsValue::from_str("id"),
+                &JsValue::from_str(&new_id),
+            )
+            .unwrap();
+            let state = js_sys::Object::new();
+            js_sys::Reflect::set(
+                &state,
+                &JsValue::from_str("selected"),
+                &JsValue::from_bool(true),
+            )
+            .unwrap();
+            map_clone.setFeatureState(&params.into(), &state.into());
+
+            selected_id = Some(new_id);
         }) as Box<dyn FnMut(JsValue)>);
 
-        map.on("click", closure.as_ref().unchecked_ref());
-        closure.forget(); // keep alive
+        map.on("click", "parcels", closure.as_ref().unchecked_ref());
+        closure.forget();
     });
+}
+
+pub async fn load_map_style(url: &str) -> JsValue {
+    let resp = Request::get(url)
+        .send()
+        .await
+        .expect("failed to get map style sheet");
+
+    let text = resp
+        .text()
+        .await
+        .expect("failed to extract text from response");
+    let js_obj = JSON::parse(&text)
+        .expect("failed to extract json")
+        .unchecked_into::<JsValue>();
+    js_obj
 }
 
 #[component]

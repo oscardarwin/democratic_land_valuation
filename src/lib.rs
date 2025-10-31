@@ -1,5 +1,4 @@
 pub mod app;
-pub mod map_style;
 pub mod maplibre;
 
 use app::App;
