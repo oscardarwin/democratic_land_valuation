@@ -32,6 +32,8 @@
             pkg-config
             wasm-bindgen-cli_0_2_100
             dart-sass
+            prettierd
+            tippecanoe
           ];
         };
       });
