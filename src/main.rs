@@ -23,7 +23,9 @@ async fn main() {
             }
         })
         .fallback(leptos_axum::file_and_error_handler(move |leptos_options| {
-            Shell(ShellProps { leptos_options })
+            Shell(ShellProps {
+                leptos_options: leptos_options.clone(),
+            })
         }))
         .with_state(leptos_options);
 
