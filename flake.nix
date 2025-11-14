@@ -4,36 +4,29 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
-    rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = { self, nixpkgs, flake-utils, rust-overlay }:
+  outputs = { nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        overlays = [ (import rust-overlay) ];
-        pkgs = import nixpkgs { inherit system overlays; };
-
-        rust = pkgs.rust-bin.stable.latest.default.override {
-          extensions = [ "rust-src" "rustfmt" "clippy" ];
-          targets = [ "wasm32-unknown-unknown" ];
-        };
+        pkgs = import nixpkgs { inherit system; };
       in
       {
         devShells.default = pkgs.mkShell {
           name = "leptos-dev-shell";
 
           buildInputs = with pkgs; [
-            rust
-            cargo-leptos
-            cargo-generate
             gdal
             nodejs
-            openssl
-            pkg-config
-            wasm-bindgen-cli_0_2_100
-            dart-sass
             prettierd
             tippecanoe
+            nodejs_22
+            nodePackages.pnpm
+            nodePackages.nodejs
+            nodePackages.tailwindcss
+            nodePackages.postcss
+            nodePackages.autoprefixer
+            nodePackages.typescript
           ];
         };
       });
