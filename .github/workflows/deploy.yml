@@ -1,0 +1,55 @@
+name: Deploy SvelteKit with Nix
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      # 1. Checkout the repo
+      - uses: actions/checkout@v3
+
+      # 2. Setup caching for nix-store
+      - name: Cache Nix store
+        uses: cachix/install-nix-action@v17
+        with:
+          nix_path: nixpkgs=https://nixos.org/channels/nixos-23.05-small
+          # optional: use GitHub cache for store
+          # see https://github.com/cachix/install-nix-action
+
+      # 3. Install Nix
+      - uses: cachix/install-nix-action@v17
+        with:
+          nix_path: nixpkgs=https://nixos.org/channels/nixos-23.05-small
+
+      # 4. Build and enter devShell from flake
+      - name: Enter flake devShell and build
+        run: |
+          nix develop --command bash -c "
+            npm ci
+            npm run build
+          "
+
+      # 5. Switch to pages branch
+      - name: Switch to pages branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin pages || true
+          git checkout pages || git checkout --orphan pages
+          git rm -rf .
+
+      # 6. Copy build output
+      - run: cp -r build/* .
+
+      # 7. Commit and push
+      - run: |
+          git add .
+          git commit -m "Deploy: $GITHUB_SHA" || echo "No changes to commit"
+          git push origin pages --force
