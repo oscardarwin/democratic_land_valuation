@@ -1,7 +1,5 @@
 node_modules
 
-static/
-
 # Output
 .output
 .vercel
