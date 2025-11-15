@@ -5,11 +5,15 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
+		appDir: 'app',
 		adapter: adapter({
-			fallback: 'index.html' // 👈 REQUIRED for SPA mode
+			fallback: 'index.html'
 		}),
 		prerender: {
-			entries: [] // 👈 don't prerender anything
+			entries: []
+		},
+		paths: {
+			base: process.argv.includes('dev') ? '' : '/democratic_land_valuation'
 		}
 	}
 };
