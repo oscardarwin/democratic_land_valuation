@@ -27,7 +27,7 @@ export async function createMap(containerId: string): Promise<any | undefined> {
 
   const map = new Map({
     container: container,
-    style: "/style.json",
+    style: "style.json",
     center: [-0.085, 51.49],
     zoom: 14,
     maxBounds: [

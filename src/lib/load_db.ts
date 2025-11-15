@@ -1,8 +1,8 @@
 import { GeometryLine, GeometryMultiPolygon, GeometryPoint, GeometryPolygon, Surreal } from 'surrealdb';
 import { surrealdbWasmEngines } from "@surrealdb/wasm";
 
-const GEOJSON_PATH = '/map_layers/title_boundaries.geojson';
-const SCHEMA_DEFINITIONS = '/schema.surql';
+const GEOJSON_PATH = 'title_boundaries.geojson';
+const SCHEMA_DEFINITIONS = 'schema.surql';
 
 const DB_NAMESPACE = 'democratic_lvt';
 const DB_DATABASE = 'title_boundaries';
