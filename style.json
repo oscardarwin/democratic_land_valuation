@@ -46,79 +46,79 @@
   "sources": {
     "airports": {
       "type": "geojson",
-      "data": "/map_layers/airports.geojson"
+      "data": "map_layers/airports.geojson"
     },
     "boundaries": {
       "type": "geojson",
-      "data": "/map_layers/boundaries.geojson"
+      "data": "map_layers/boundaries.geojson"
     },
     "buildings": {
       "type": "geojson",
-      "data": "/map_layers/buildings.geojson"
+      "data": "map_layers/buildings.geojson"
     },
     "contours": {
       "type": "geojson",
-      "data": "/map_layers/contours.geojson"
+      "data": "map_layers/contours.geojson"
     },
     "etl": {
       "type": "geojson",
-      "data": "/map_layers/etl.geojson"
+      "data": "map_layers/etl.geojson"
     },
     "foreshore": {
       "type": "geojson",
-      "data": "/map_layers/foreshore.geojson"
+      "data": "map_layers/foreshore.geojson"
     },
     "greenspaces": {
       "type": "geojson",
-      "data": "/map_layers/greenspaces.geojson"
+      "data": "map_layers/greenspaces.geojson"
     },
     "names": {
       "type": "geojson",
-      "data": "/map_layers/names.geojson"
+      "data": "map_layers/names.geojson"
     },
     "national_parks": {
       "type": "geojson",
-      "data": "/map_layers/national_parks.geojson"
+      "data": "map_layers/national_parks.geojson"
     },
     "rail": {
       "type": "geojson",
-      "data": "/map_layers/rail.geojson"
+      "data": "map_layers/rail.geojson"
     },
     "railwaystations": {
       "type": "geojson",
-      "data": "/map_layers/railwaystations.geojson"
+      "data": "map_layers/railwaystations.geojson"
     },
     "roads": {
       "type": "geojson",
-      "data": "/map_layers/roads.geojson"
+      "data": "map_layers/roads.geojson"
     },
     "sea": {
       "type": "geojson",
-      "data": "/map_layers/sea.geojson"
+      "data": "map_layers/sea.geojson"
     },
     "sites": {
       "type": "geojson",
-      "data": "/map_layers/sites.geojson"
+      "data": "map_layers/sites.geojson"
     },
     "surfacewater": {
       "type": "geojson",
-      "data": "/map_layers/surfacewater.geojson"
+      "data": "map_layers/surfacewater.geojson"
     },
     "urban_areas": {
       "type": "geojson",
-      "data": "/map_layers/urban_areas.geojson"
+      "data": "map_layers/urban_areas.geojson"
     },
     "waterlines": {
       "type": "geojson",
-      "data": "/map_layers/waterlines.geojson"
+      "data": "map_layers/waterlines.geojson"
     },
     "woodland": {
       "type": "geojson",
-      "data": "/map_layers/woodland.geojson"
+      "data": "map_layers/woodland.geojson"
     },
     "title_boundaries": {
       "type": "geojson",
-      "data": "/title_boundaries.geojson",
+      "data": "title_boundaries.geojson",
       "promoteId": "entity"
     }
   },
