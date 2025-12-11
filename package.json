@@ -42,6 +42,8 @@
   },
   "dependencies": {
     "@surrealdb/wasm": "^1.4.1",
+    "@turf/area": "^7.2.0",
+    "geojson": "^0.5.0",
     "maplibre-gl": "^5.12.0"
   }
 }
