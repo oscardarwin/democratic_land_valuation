@@ -27,6 +27,8 @@
             nodePackages.postcss
             nodePackages.autoprefixer
             nodePackages.typescript
+            python311
+            stdenv.cc.cc.lib
           ];
         };
       });
