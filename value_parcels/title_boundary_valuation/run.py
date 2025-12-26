@@ -1,4 +1,6 @@
 from __future__ import annotations
+import math
+import copy
 import json
 from typing import Callable, List, Tuple, cast
 
@@ -122,31 +124,28 @@ def load_constituency_values(csv_path: str, metric_transformer: Transformer) -> 
     return rbf
 
 
-def load_title_boundaries(geojson_path: str, metric_transformer: Transformer) -> List[TitleBoundary]:
+def load_title_boundary_json(geojson_path: str) -> dict:
     with open(geojson_path, "r") as f:
-        data = json.load(f)
+         return json.load(f)
 
-    title_boundaries: list[TitleBoundary] = []
-    for feature in data["features"]:
-        geometry = feature["geometry"]
-        
-        coordinates = geometry["coordinates"]
-        polygons = [
-            [[list(metric_transformer.transform(xx=coord[0], yy=coord[1]))
-            for coord in inner_outer]
-            for inner_outer in polygon]
-            for polygon in coordinates
-        ]
-        geometry["coordinates"] = polygons
-        
-        multi_polygon = cast(MultiPolygon, shape(geometry))
+def get_title_boundary(feature: dict, metric_transformer: Transformer) -> TitleBoundary:
+    geometry = copy.deepcopy(feature["geometry"])
+    
+    coordinates = geometry["coordinates"]
+    polygons = [
+        [[list(metric_transformer.transform(xx=coord[0], yy=coord[1]))
+        for coord in inner_outer]
+        for inner_outer in polygon]
+        for polygon in coordinates
+    ]
+    geometry["coordinates"] = polygons
+    
+    multi_polygon = cast(MultiPolygon, shape(geometry))
 
-        props = feature["properties"]
-        entity_id = props.get("entity")
+    props = feature["properties"]
+    entity_id = props.get("entity")
 
-        title_boundary = TitleBoundary(entity_id=entity_id, geometry=multi_polygon)
-        title_boundaries.append(title_boundary)
-    return title_boundaries
+    return TitleBoundary(entity_id=entity_id, geometry=multi_polygon)
 
 def value_polygon(
     polygon: Polygon,
@@ -200,28 +199,30 @@ def value_title_boundary(
 def main() -> None:
     metric_transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
     rbf_interpolator = load_constituency_values("constituency_land_values.csv", metric_transformer=metric_transformer)
-    title_boundaries = load_title_boundaries("title_boundaries.geojson", metric_transformer=metric_transformer)
 
-    results = {}
-    areas = []
-    boundaries = title_boundaries
-    for title_boundary in boundaries:
+    title_boundaries_geojson = load_title_boundary_json(geojson_path="title_boundaries.geojson")
+    
+    log_land_values: list[float] = list()
+    for feature in title_boundaries_geojson["features"]:
+        title_boundary = get_title_boundary(feature=feature, metric_transformer=metric_transformer)
+
         valued_title_boundary = value_title_boundary(title_boundary=title_boundary, rbf_interpolator=rbf_interpolator)
-        results[valued_title_boundary.entity_id] = valued_title_boundary.land_value
-        areas.append(valued_title_boundary.area)
-    
+        log_land_values.append(float(np.log(valued_title_boundary.land_value)))
+        properties = feature.get("properties", {})
+        properties["land_value"] = float(valued_title_boundary.land_value)
 
-    values = np.array(list(results.values()))
-    areas_np = np.array(areas)
-    print(f"average land value {values.mean()}, median: {np.median(values)}")
-    print(f"average land area {areas_np.mean()}, median: {np.median(areas_np)}")
-    plt.clf()
-    plt.hist(np.log(values), bins=100)
-    plt.savefig("histogram_of_land_values.png")
+    max_land_value = max(log_land_values) 
+    min_land_value = min(log_land_values)
+    land_value_span = max_land_value - min_land_value
 
-    # plot_valued_title_boundaries(valued_title_boundaries=results, boundaries=boundaries)
-    with open("valued_title_boundaries.json", "w") as f:
-         json.dump(results, f)
-    
+    for feature in title_boundaries_geojson["features"]:
+        properties = feature.get("properties", {})
+        properties["land_value_normalized"] = (float(np.log(properties["land_value"])) - min_land_value) / land_value_span
+
+    print(title_boundaries_geojson["features"][0]) 
+
+    with open("valued_title_boundaries.geojson", "w") as f:
+        json.dump(title_boundaries_geojson, f, indent=2)
+
 if __name__ == "__main__":
     main()
