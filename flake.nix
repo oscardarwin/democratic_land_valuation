@@ -29,7 +29,17 @@
             nodePackages.typescript
             python311
             stdenv.cc.cc.lib
+            zlib
           ];
+
+          shellHook = ''
+            export LD_LIBRARY_PATH=${
+               pkgs.lib.makeLibraryPath [
+                 pkgs.stdenv.cc.cc
+                 pkgs.zlib
+               ]
+             }:$LD_LIBRARY_PATH
+          '';
         };
       });
 }
