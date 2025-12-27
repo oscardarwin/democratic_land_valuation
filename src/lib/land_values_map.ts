@@ -38,6 +38,18 @@ export async function createLandValuesMap(containerId: string): Promise<any | un
 
   map.addControl(new NavigationControl({}), 'top-right');
 
+  const values_popup = new maplibregl.Popup({
+    closeButton: true,
+    closeOnClick: false
+  });
+
+  const formatMillionsGBP = new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3
+  });
+
   console.log("Map initialized successfully:", map);
 
   let selectedId: string | number | null = null;
@@ -46,17 +58,23 @@ export async function createLandValuesMap(containerId: string): Promise<any | un
     const feature = e.features?.[0];
     if (!feature) return;
 
-    // IMPORTANT: Your style.json uses "promoteId": "entity" for "title_boundaries" 
     const featureId = feature.id ?? null;
     if (featureId === null) return;
+
+    const formatted_land_value = formatMillionsGBP.format(feature.properties.land_value / 1_000_000);
+    values_popup
+      .setLngLat(e.lngLat)
+      .setHTML(`
+        <strong>Parcel</strong><br>
+        Land value: ${formatted_land_value}M
+      `)
+      .addTo(map);
 
     if (selectedId !== null) {
       map.setFeatureState(
         { source: "title_boundaries", id: selectedId },
         { selected: false }
       );
-
-      console.log("selected id:", selectedId);
     }
 
     map.setFeatureState(
