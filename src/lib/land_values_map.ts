@@ -84,6 +84,65 @@ export async function createLandValuesMap(containerId: string): Promise<any | un
 
     selectedId = featureId;
   });
+  
+  map.on("load", () => {
+    addParcelLayers(map);
+  });
 
   return map;
+}
+
+function addParcelLayers(map: MapLibreMap): void {
+  const parcelsFill: FillLayerSpecification = {
+    id: "parcels",
+    type: "fill",
+    source: "title_boundaries",
+    paint: {
+      "fill-color": [
+        "interpolate",
+        ["linear"],
+        ["get", "land_value_normalized"],
+        0, "#2c7bb6",
+        0.2, "#abd9e9",
+        0.4, "#ffffbf",
+        0.6, "#fdae61",
+        0.8, "#d7191c"
+      ],
+      "fill-opacity": [
+        "case",
+        ["boolean", ["feature-state", "selected"], false],
+        0.5,
+        0.3
+      ]
+    }
+  };
+
+  const parcelsOutline: LineLayerSpecification = {
+    id: "parcels-outline",
+    type: "line",
+    source: "title_boundaries",
+    paint: {
+      "line-color": "rgba(0.5, 0.5, 0.5, 0.5)",
+      "line-width": 1
+    }
+  };
+
+  const parcelsOutlineSelected: LineLayerSpecification = {
+    id: "parcels-outline-selected",
+    type: "line",
+    source: "title_boundaries",
+    paint: {
+      "line-color": [
+        "case",
+        ["boolean", ["feature-state", "selected"], false],
+        "#000000",
+        "rgba(0,0,0,0)"
+      ],
+      "line-width": 3
+    }
+  };
+
+  map.addLayer(parcelsFill);
+  map.addLayer(parcelsOutline);
+  map.addLayer(parcelsOutlineSelected);
 }
