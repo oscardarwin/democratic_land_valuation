@@ -12,6 +12,7 @@ node_modules
 Thumbs.db
 
 # Env
+value_parcels/.venv
 .env
 .env.*
 !.env.example
