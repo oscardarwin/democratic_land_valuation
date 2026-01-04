@@ -120,6 +120,11 @@
       "type": "geojson",
       "data": "title_boundaries.geojson",
       "promoteId": "entity"
+    },
+    "title_boundary_representative_points": {
+      "type": "geojson",
+      "data": "title_boundary_representative_points.geojson",
+      "promoteId": "entity"
     }
   },
   "glyphs": "fonts/{fontstack}/{range}.pbf",

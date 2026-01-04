@@ -1,17 +1,9 @@
 import { runLoader } from "./load_db.ts";
-
+import { getMapSettings } from "./map_settings.ts";
+import { selectedParcelId } from "$lib/stores/selectedParcel";
 
 export async function createLandValuesMap(containerId: string): Promise<any | undefined> {
-
   console.log("Initialising Map");
-  runLoader();
-
-  const container = document.getElementById(containerId);
-
-  if (!container) {
-    console.error(`Map container with ID '${containerId}' not found.`);
-    return undefined;
-  }
 
   // === Dynamic Import to bypass SSR failure ===
   // This ensures maplibre-gl is only evaluated in the browser environment.
@@ -23,18 +15,9 @@ export async function createLandValuesMap(containerId: string): Promise<any | un
   // Define the type alias directly from the dynamically imported module
   type MapMouseEventType = maplibregl.MapMouseEvent;
   // ===========================================
-
-
-  const map = new Map({
-    container: container,
-    style: "style.json",
-    center: [-0.085, 51.49],
-    zoom: 14,
-    maxBounds: [
-      [-0.130945, 51.474153],
-      [-0.043786, 51.516047]
-    ],
-  });
+  
+  const map_settings = getMapSettings(containerId);
+  const map = new Map(map_settings);
 
   map.addControl(new NavigationControl({}), 'top-right');
 
@@ -51,7 +34,7 @@ export async function createLandValuesMap(containerId: string): Promise<any | un
   });
 
   console.log("Map initialized successfully:", map);
-
+  
   let selectedId: string | number | null = null;
 
   map.on("click", "parcels", (e: MapMouseEventType) => {
@@ -81,8 +64,9 @@ export async function createLandValuesMap(containerId: string): Promise<any | un
       { source: "title_boundaries", id: featureId },
       { selected: true }
     );
-
+    
     selectedId = featureId;
+    selectedParcelId.set(featureId);
   });
   
   map.on("load", () => {

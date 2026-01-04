@@ -1,5 +1,6 @@
 <script lang="ts">
   import LandValues from '$lib/components/LandValues.svelte';
+  import ParcelComparison from '$lib/components/ParcelComparison.svelte';
 </script>
 
 <article class="blog">
@@ -42,6 +43,8 @@ The voting local resident isn't told which parcel is up for appeal.
 Below is an draft interface showing how the question would be posed and then answered.
   </p>
 
+
+<ParcelComparison height="360px" />
 
   <p class="lead">
 After a time period of 30 days, voting ends and the ordering submitted by voters are aggregated into a "consensus" order. The new valuation of the property is computed by appropriately weighting the values of the other considered parcels under the current automatic valuation method. See below for an example method:
