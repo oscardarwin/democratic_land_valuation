@@ -6,7 +6,7 @@ from typing import Callable, List, Tuple, cast
 
 import numpy as np
 from scipy.spatial import cKDTree
-from shapely import MultiPolygon
+from shapely import MultiPolygon, Point
 import pandas as pd
 from shapely.geometry import shape, Polygon
 from shapely import Geometry
@@ -29,6 +29,7 @@ class TitleBoundary:
 class ValuedTitleBoundary:
     entity_id: str
     land_value: float
+    representative_point: Point
     area: float
 
 def debug_plot_rbf(rbf, xs, ys, values, title="RBF Surface Check"):
@@ -161,18 +162,16 @@ def value_polygon(
     for tri in triangles:
         cx, cy = tri.centroid.xy
 
-        centroid = np.array([[cx[0], cy[0]]])
+        centroid = [cx[0], cy[0]]
 
-        # distances_to_datapoints = np.linalg.norm(rbf_interpolator.y - centroid, axis=1, ord=2)
-        # closest_index = np.argmin(distances_to_datapoints)
-
-        land_value_per_hectare = rbf_interpolator(centroid)[0]
+        land_value_per_hectare = rbf_interpolator(np.array([centroid]))[0]
         area_meters = tri.area
         area_ha = area_meters / 10_000.0
         total_area += area_meters
 
         total_value += land_value_per_hectare * area_ha
     
+
 
     return total_value, total_area
 
@@ -189,12 +188,49 @@ def value_title_boundary(
         total_value += value
         total_area += area
 
+    representative_point = title_boundary.geometry.representative_point()
     return ValuedTitleBoundary(
         entity_id=title_boundary.entity_id,
         land_value=total_value,
+        representative_point=representative_point,
         area=total_area,
     )
 
+def write_title_boundary_centroids(
+    title_boundaries_geojson: dict,
+    metric_transformer: Transformer,
+) -> None:
+    boundary_representative_points_features = []
+
+    for feature in title_boundaries_geojson["features"]:
+        geometry = copy.deepcopy(feature["geometry"])
+
+        multi_polygon = cast(MultiPolygon, shape(geometry))
+
+        point = multi_polygon.representative_point()
+        x, y = point.coords[0]
+
+        entity_id = feature.get("properties", {}).get("entity")
+
+        boundary_representative_points_features.append({
+            "type": "Feature",
+            "id": entity_id,
+            "geometry": {
+                "type": "Point",
+                "coordinates": [x, y],
+            },
+            "properties": {
+                "entity": entity_id,
+            },
+        })
+
+    representative_points_geojson = {
+        "type": "FeatureCollection",
+        "features": boundary_representative_points_features,
+    }
+
+    with open("title_boundary_representative_points.geojson", "w") as f:
+        json.dump(representative_points_geojson, f, indent=2)
 
 def main() -> None:
     metric_transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
@@ -210,16 +246,20 @@ def main() -> None:
         log_land_values.append(float(np.log(valued_title_boundary.land_value)))
         properties = feature.get("properties", {})
         properties["land_value"] = float(valued_title_boundary.land_value)
+        properties["area"] = float(valued_title_boundary.area)
 
-    max_land_value = max(log_land_values) 
-    min_land_value = min(log_land_values)
-    land_value_span = max_land_value - min_land_value
+    max_log_land_value = max(log_land_values) 
+    min_log_land_value = min(log_land_values)
+    log_land_value_span = max_log_land_value - min_log_land_value
 
-    for feature in title_boundaries_geojson["features"]:
+    for log_land_value, feature in zip(log_land_values, title_boundaries_geojson["features"]):
         properties = feature.get("properties", {})
-        properties["land_value_normalized"] = (float(np.log(properties["land_value"])) - min_land_value) / land_value_span
+        properties["land_value_normalized"] = (log_land_value - min_log_land_value) / log_land_value_span
 
-    print(title_boundaries_geojson["features"][0]) 
+    write_title_boundary_centroids(
+        title_boundaries_geojson=title_boundaries_geojson,
+        metric_transformer=metric_transformer,
+    )
 
     with open("valued_title_boundaries.geojson", "w") as f:
         json.dump(title_boundaries_geojson, f, indent=2)

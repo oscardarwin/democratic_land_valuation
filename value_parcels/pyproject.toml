@@ -19,6 +19,7 @@ dependencies = [
     "pyproj>=3.6",     # optional for coordinate transformations
     "pandas>=2.3.3",
     "matplotlib>=3.10.7",
+    "PyGObject"
 ]
 
 [project.optional-dependencies]
